@@ -4,7 +4,7 @@ module AsciiCharts
 
     attr_reader :options, :data
 
-    DEFAULT_MAX_Y_SPAN = 10
+    DEFAULT_MAX_Y_SPAN = 20
 
     #data is a sorted array of [x, y] pairs
 
