@@ -36,7 +36,7 @@ module AsciiCharts
         y_span = (@max_yval - @min_yval).to_f
         if @all_ints
           step_size = 1
-          puts "picking new step size"
+          puts "#{(y_span / step_size)} > #{max_y_span}"
           while (y_span / step_size) > max_y_span
             step_size = self.next_step_up(step_size)
           end
