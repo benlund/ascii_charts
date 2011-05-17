@@ -220,6 +220,10 @@ module AsciiCharts
   class Cartesian < Chart
 
     def lines
+      if self.data.size == 0
+        return [[' ', self.options[:title], ' ', '|', '+-', ' ']] 
+      end
+
       lines = [' ']
       
       bar_width = self.max_xval_width + 1
