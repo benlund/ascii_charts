@@ -1,5 +1,7 @@
 module AsciiCharts
 
+  VERSION = '0.9'
+
   class Chart
 
     attr_reader :options, :data

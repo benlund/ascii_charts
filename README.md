@@ -1,6 +1,6 @@
 # ASCII Charts
 
-A Ruby library for generating plain x,y cartesian plots and histograms that an be displayed in a terminal session.
+A Ruby library for generating plain text x,y cartesian plots and histograms that can be displayed in a terminal session.
 
 ## Features
 
@@ -10,7 +10,7 @@ A Ruby library for generating plain x,y cartesian plots and histograms that an b
 
 ## Unfeatures
 
- * No more than one data series per charts
+ * No more than one data series per chart
  * Data must be pre-sorted 
  * x axis will not be continuous if your data isn't
  * Only x,y point graphs and bar histograms supported
