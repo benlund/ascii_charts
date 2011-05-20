@@ -33,24 +33,23 @@ module AsciiCharts
           if @all_ints && (step_size < 1)
             step_size = 1
           else
-            if (y_span / step_size) < min_y_vals
-              while (y_span / step_size) < min_y_vals
-                candidate_step_size = self.next_step_down(step_size)
-                if @all_ints && (candidate_step_size < 1) ## don't go below one
-                  break
-                end
-                step_size = candidate_step_size
+            while (y_span / step_size) < min_y_vals
+              candidate_step_size = self.next_step_down(step_size)
+              if @all_ints && (candidate_step_size < 1) ## don't go below one
+                break
               end
+              step_size = candidate_step_size
             end
           end
 
           #go up if we undershot, or were never over
-          if (y_span / step_size) > max_y_vals
-            while (y_span / step_size) < min_y_vals
-              step_size = self.next_step_up(step_size)
-            end
+          while (y_span / step_size) > max_y_vals
+            step_size = self.next_step_up(step_size)
           end
           @step_size = step_size
+        end
+        if !@all_ints && @step_size.is_a?(Integer)
+          @step_size = @step_size.to_f
         end
       end
       @step_size
