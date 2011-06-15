@@ -60,9 +60,13 @@ module AsciiCharts
     STEPS = [1, 2, 5]
 
     def from_step(val)
-      order = Math.log10(val).floor.to_i
-      num = (val / (10 ** order))
-      [num, order]
+      if 0 == val
+        [0, 0]
+      else
+        order = Math.log10(val).floor.to_i
+        num = (val / (10 ** order))
+        [num, order]
+      end
     end
 
     def to_step(num, order)
