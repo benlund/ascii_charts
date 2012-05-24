@@ -105,18 +105,9 @@ module AsciiCharts
 
     #round to nearest step size, making sure we curtail precision to same order of magnitude as the step size to avoid 0.4 + 0.2 = 0.6000000000000001
     def round_value(val)
-      remainder = val % self.step_size
-      unprecised = if (remainder * 2) >= self.step_size
-                      (val - remainder) + self.step_size
-                    else
-                      val - remainder
-                    end
-      if self.step_size < 1
-        precision = -Math.log10(self.step_size).floor
-        (unprecised * (10 ** precision)).to_i.to_f / (10 ** precision)
-      else
-        unprecised
-      end      
+      _, exponent = from_step(step_size)
+      decimal_places = [0, -exponent].max
+      ((val / step_size).round * step_size).round(decimal_places)
     end
 
     def max_yval
@@ -267,7 +258,6 @@ module AsciiCharts
           end
         end
         lines << current_line.join('')
-        current_y = current_y + self.step_size
       end
       lines << ' '
       if self.options[:title]
