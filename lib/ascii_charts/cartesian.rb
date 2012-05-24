@@ -26,14 +26,24 @@ module AsciiCharts
         self.rounded_data.each do |point|
           def marker(series, i)
             if (0 == i) && options[:hide_zero]
-              '-'
+              marker = '-'
             else
               if (options[:markers])
-                options[:markers][series]
+                marker = options[:markers][series]
+
+                # unicode characters need to be treated as two-character strings for string.center() to work correctly
+                if marker.length > 1
+                  marker += if 0 == i
+                              '-'
+                            else
+                              ' '
+                            end
+                end
               else
-                '*'
+                marker = '*'
               end
             end
+            marker
           end
 
           filler = if 0 == i
