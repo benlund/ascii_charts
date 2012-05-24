@@ -10,27 +10,35 @@ module AsciiCharts
 
     def initialize(data, options={})
       if (data[0].length == 2)
-        # treat as array of points
-        @data = data
+        @data = data # treat as array of points
       else
-        # treat as array of series
-        @data = []
-        (0..(data[0].length - 1)).each do |i|
-          point = []
-          (0..(data.length - 1)).each do |series|
-            point.push(data[series][i])
-          end
-          @data.push(point)
-        end
+        @data = series_to_points(data) # treat as array of series
       end
 
       @options = options
     end
 
+    def series_to_points(arr_of_series)
+      points = []
+      (0..(arr_of_series[0].length - 1)).each do |i|
+        point = []
+        (0..(arr_of_series.length - 1)).each do |series|
+          point.push(arr_of_series[series][i])
+        end
+        points.push(point)
+      end
+      points
+    end
 
     def rounded_data
       @rounded_data ||= self.data.map do |point|
-        point.map {|coord| self.round_value(coord)}
+        point.each_with_index.map do |coord, i|
+          if i == 0
+            coord
+          else
+            round_value(coord)
+          end
+        end
       end
     end
 
