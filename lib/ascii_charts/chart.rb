@@ -9,12 +9,29 @@ module AsciiCharts
     #data is a sorted array of [x, y] pairs
 
     def initialize(data, options={})
-      @data = data
+      if (data[0].length == 2)
+        # treat as array of points
+        @data = data
+      else
+        # treat as array of series
+        @data = []
+        (0..(data[0].length - 1)).each do |i|
+          point = []
+          (0..(data.length - 1)).each do |series|
+            point.push(data[series][i])
+          end
+          @data.push(point)
+        end
+      end
+
       @options = options
     end
 
+
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
+      @rounded_data ||= self.data.map do |point|
+        point.map {|coord| self.round_value(coord)}
+      end
     end
 
     def step_size
@@ -23,8 +40,9 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
+
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
 
           if @all_ints && (step_size < 1)
@@ -102,16 +120,16 @@ module AsciiCharts
     def round_value(val)
       remainder = val % self.step_size
       unprecised = if (remainder * 2) >= self.step_size
-                      (val - remainder) + self.step_size
-                    else
-                      val - remainder
-                    end
+                     (val - remainder) + self.step_size
+                   else
+                     val - remainder
+                   end
       if self.step_size < 1
         precision = -Math.log10(self.step_size).floor
         (unprecised * (10 ** precision)).to_i.to_f / (10 ** precision)
       else
         unprecised
-      end      
+      end
     end
 
     def max_yval
@@ -136,8 +154,8 @@ module AsciiCharts
     end
 
     def scan_data
-      @max_yval = -Float::INFINITY
-      @min_yval = Float::INFINITY
+      @max_yval = 0
+      @min_yval = 0
       @all_ints = true
 
       @max_xval_width = 1

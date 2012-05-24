@@ -23,24 +23,37 @@ module AsciiCharts
               end
         current_line = [(' ' * (self.max_yval_width - yval.length) ) + "#{current_y}#{bar}"]
 
-        self.rounded_data.each do |pair|
-          marker = if (0 == i) && options[:hide_zero]
-                     '-'
-                   else
-                     '*'
-                   end
+        self.rounded_data.each do |point|
+          def marker(series, i)
+            puts series
+
+            if (0 == i) && options[:hide_zero]
+              '-'
+            else
+              if (options[:markers])
+                options[:markers][series]
+              else
+                '*'
+              end
+            end
+          end
+
           filler = if 0 == i
                      '-'
                    else
                      ' '
                    end
-          comparison = if self.options[:bar]
-                         current_y <= pair[1]
-                       else
-                         current_y == pair[1]
-                       end
-          if comparison
-            current_line << marker.center(bar_width, filler)
+
+          matching_series = false
+          (1..(point.length - 1)).each do |i|
+            if ((self.options[:bar] && current_y <= point[i]) || (!self.options[:bar] && current_y == point[i]))
+              matching_series = i
+            end
+          end
+
+          if matching_series
+            puts matching_series.inspect
+            current_line << marker(matching_series[0], i).center(bar_width, filler)
           else
             current_line << filler * bar_width
           end
@@ -57,4 +70,5 @@ module AsciiCharts
     end
 
   end
+
 end
