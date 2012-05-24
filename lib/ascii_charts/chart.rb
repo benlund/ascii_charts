@@ -168,19 +168,21 @@ module AsciiCharts
 
       @max_xval_width = 1
 
-      self.data.each do |pair|
-        if pair[1] > @max_yval
-          @max_yval = pair[1]
-        end
-        if pair[1] < @min_yval
-          @min_yval = pair[1]
-        end
-        if @all_ints && !pair[1].is_a?(Integer)
-          @all_ints = false
+      self.data.each do |point|
+        if (xw = point[0].to_s.length) > @max_xval_width
+          @max_xval_width = xw
         end
 
-        if (xw = pair[0].to_s.length) > @max_xval_width
-          @max_xval_width = xw
+        point[1..-1].each do |yval|
+          if yval > @max_yval
+            @max_yval = yval
+          end
+          if yval < @min_yval
+            @min_yval = yval
+          end
+          if @all_ints && !yval.is_a?(Integer)
+            @all_ints = false
+          end
         end
       end
     end
