@@ -8,17 +8,42 @@ module AsciiCharts
 
     DEFAULT_MAX_Y_VALS = 20
     DEFAULT_MIN_Y_VALS = 10
+    INFINITY = +1.0/0.0
 
     #data is a sorted array of [x, y] pairs
 
     def initialize(data, options={})
-      @data = data
+      if (data[0].length == 2)
+        @data = data # treat as array of points
+      else
+        @data = series_to_points(data) # treat as array of series
+      end
+
       @options = options
     end
 
+    def series_to_points(arr_of_series)
+      points = []
+      (0..(arr_of_series[0].length - 1)).each do |i|
+        point = []
+        (0..(arr_of_series.length - 1)).each do |series|
+          point.push(arr_of_series[series][i])
+        end
+        points.push(point)
+      end
+      points
+    end
 
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
+      @rounded_data ||= self.data.map do |point|
+        point.each_with_index.map do |coord, i|
+          if i == 0
+            coord
+          else
+            round_value(coord)
+          end
+        end
+      end
     end
 
     def step_size
@@ -71,7 +96,7 @@ module AsciiCharts
 
     def to_step(num, order)
       s = num * (10 ** order)
-      if order < 0        
+      if order < 0
         s.to_f
       else
         s
@@ -107,16 +132,16 @@ module AsciiCharts
     def round_value(val)
       remainder = val % self.step_size
       unprecised = if (remainder * 2) >= self.step_size
-                      (val - remainder) + self.step_size
-                    else
-                      val - remainder
-                    end
+                     (val - remainder) + self.step_size
+                   else
+                     val - remainder
+                   end
       if self.step_size < 1
         precision = -Math.log10(self.step_size).floor
         (unprecised * (10 ** precision)).to_i.to_f / (10 ** precision)
       else
         unprecised
-      end      
+      end
     end
 
     def max_yval
@@ -147,19 +172,21 @@ module AsciiCharts
 
       @max_xval_width = 1
 
-      self.data.each do |pair|
-        if pair[1] > @max_yval
-          @max_yval = pair[1]
-        end
-        if pair[1] < @min_yval
-          @min_yval = pair[1]
-        end
-        if @all_ints && !pair[1].is_a?(Integer)
-          @all_ints = false
+      self.data.each do |point|
+        if (xw = point[0].to_s.length) > @max_xval_width
+          @max_xval_width = xw
         end
 
-        if (xw = pair[0].to_s.length) > @max_xval_width
-          @max_xval_width = xw
+        point[1..-1].each do |yval|
+          if yval > @max_yval
+            @max_yval = yval
+          end
+          if yval < @min_yval
+            @min_yval = yval
+          end
+          if @all_ints && !yval.is_a?(Integer)
+            @all_ints = false
+          end
         end
       end
     end
@@ -226,14 +253,14 @@ module AsciiCharts
 
     def lines
       if self.data.size == 0
-        return [[' ', self.options[:title], ' ', '|', '+-', ' ']] 
+        return [[' ', self.options[:title], ' ', '|', '+-', ' ']]
       end
 
       lines = [' ']
-      
+
       bar_width = self.max_xval_width + 1
 
-      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|pair| pair[0].to_s.center(bar_width)}.join('')
+      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|point| point[0].to_s.center(bar_width)}.join('')
 
       self.y_range.each_with_index do |current_y, i|
         yval = current_y.to_s
@@ -243,25 +270,53 @@ module AsciiCharts
                 '|'
               end
         current_line = [(' ' * (self.max_yval_width - yval.length) ) + "#{current_y}#{bar}"]
-        
-        self.rounded_data.each do |pair|
-          marker = if (0 == i) && options[:hide_zero]
-                     '-'
-                   else
-                     '*'
-                   end
+
+        self.rounded_data.each do |point|
+          def marker(series, i)
+            if (0 == i) && options[:hide_zero]
+              marker = '-'
+            else
+              if (options[:markers])
+                marker = options[:markers][series]
+
+                # unicode characters need to be treated as two-character strings for string.center() to work correctly
+                if marker.length > 1
+                  marker += if 0 == i
+                              '-'
+                            else
+                              ' '
+                            end
+                end
+              else
+                marker = '*'
+              end
+            end
+            marker
+          end
+
           filler = if 0 == i
                      '-'
                    else
                      ' '
                    end
-          comparison = if self.options[:bar]
-                         current_y <= pair[1]
-                       else
-                         current_y == pair[1]
-                       end
-          if comparison
-            current_line << marker.center(bar_width, filler)
+
+          matching_series = false
+          lowest_point = INFINITY
+          (1..(point.length - 1)).each do |series|
+            if self.options[:bar]
+              if current_y <= point[series] && lowest_point > point[series]
+                matching_series = series
+                lowest_point = point[series]
+              end
+            else
+              if current_y == point[series]
+                matching_series = series
+              end
+            end
+          end
+
+          if matching_series
+            current_line << marker(matching_series - 1, i).center(bar_width, filler)
           else
             current_line << filler * bar_width
           end
