@@ -13,27 +13,35 @@ module AsciiCharts
 
     def initialize(data, options={})
       if (data[0].length == 2)
-        # treat as array of points
-        @data = data
+        @data = data # treat as array of points
       else
-        # treat as array of series
-        @data = []
-        (0..(data[0].length - 1)).each do |i|
-          point = []
-          (0..(data.length - 1)).each do |series|
-            point.push(data[series][i])
-          end
-          @data.push(point)
-        end
+        @data = series_to_points(data) # treat as array of series
       end
 
       @options = options
     end
 
+    def series_to_points(arr_of_series)
+      points = []
+      (0..(arr_of_series[0].length - 1)).each do |i|
+        point = []
+        (0..(arr_of_series.length - 1)).each do |series|
+          point.push(arr_of_series[series][i])
+        end
+        points.push(point)
+      end
+      points
+    end
 
     def rounded_data
       @rounded_data ||= self.data.map do |point|
-        point.map {|coord| self.round_value(coord)}
+        point.each_with_index.map do |coord, i|
+          if i == 0
+            coord
+          else
+            round_value(coord)
+          end
+        end
       end
     end
 
@@ -249,7 +257,7 @@ module AsciiCharts
 
       bar_width = self.max_xval_width + 1
 
-      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|pair| pair[0].to_s.center(bar_width)}.join('')
+      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|point| point[0].to_s.center(bar_width)}.join('')
 
       self.y_range.each_with_index do |current_y, i|
         yval = current_y.to_s
@@ -262,8 +270,6 @@ module AsciiCharts
 
         self.rounded_data.each do |point|
           def marker(series, i)
-            puts series
-
             if (0 == i) && options[:hide_zero]
               '-'
             else
@@ -282,14 +288,13 @@ module AsciiCharts
                    end
 
           matching_series = false
-          (1..(point.length - 1)).each do |i|
-            if ((self.options[:bar] && current_y <= point[i]) || (!self.options[:bar] && current_y == point[i]))
-              matching_series = i
+          (1..(point.length - 1)).each do |series|
+            if ((self.options[:bar] && current_y <= point[series]) || (!self.options[:bar] && current_y == point[series]))
+              matching_series = series
             end
           end
 
           if matching_series
-            puts matching_series.inspect
             current_line << marker(matching_series[0], i).center(bar_width, filler)
           else
             current_line << filler * bar_width
