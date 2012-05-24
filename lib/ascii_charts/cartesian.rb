@@ -53,14 +53,22 @@ module AsciiCharts
                    end
 
           matching_series = false
+          lowest_point = INFINITY
           (1..(point.length - 1)).each do |series|
-            if ((self.options[:bar] && current_y <= point[series]) || (!self.options[:bar] && current_y == point[series]))
-              matching_series = series
+            if self.options[:bar]
+              if current_y <= point[series] && lowest_point > point[series]
+                matching_series = series
+                lowest_point = point[series]
+              end
+            else
+              if current_y == point[series]
+                matching_series = series
+              end
             end
           end
 
           if matching_series
-            current_line << marker(matching_series[0], i).center(bar_width, filler)
+            current_line << marker(matching_series - 1, i).center(bar_width, filler)
           else
             current_line << filler * bar_width
           end

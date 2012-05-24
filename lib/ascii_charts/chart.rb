@@ -5,6 +5,7 @@ module AsciiCharts
 
     DEFAULT_MAX_Y_VALS = 20
     DEFAULT_MIN_Y_VALS = 10
+    INFINITY = +1.0/0.0
 
     #data is a sorted array of [x, y] pairs
 
