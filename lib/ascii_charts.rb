@@ -28,7 +28,7 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
 
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
@@ -221,12 +221,7 @@ module AsciiCharts
   class Cartesian < Chart
     def initialize(*)
       super
-
       @markers = @options[:markers] || ['*']
-
-      if @options[:bar] && @data.first.length > 2
-        raise "Can't use multiple series with :bar"
-      end
     end
 
     def lines
@@ -256,8 +251,11 @@ module AsciiCharts
           arr = arr.drop(1)
 
           arr.each_with_index do |n, j|
-            fill_in_point = self.options[:bar] ? current_y <= n : current_y == n
-            next unless fill_in_point
+            if self.options[:bar]
+              next if current_y > n || arr.any? { |nn| nn < n && current_y <= nn }
+            else
+              next if current_y != n
+            end
 
             marker = ((0 == i) && options[:hide_zero]) ? '-' : marker_for_series(j)
 
