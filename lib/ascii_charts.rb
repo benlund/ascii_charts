@@ -16,9 +16,10 @@ module AsciiCharts
       @options = options
     end
 
-
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
+      @rounded_data ||= data.map do |arr|
+        [arr.first] + arr.drop(1).map { |n| round_value(n) }
+      end
     end
 
     def step_size
@@ -27,7 +28,7 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
 
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
@@ -105,18 +106,9 @@ module AsciiCharts
 
     #round to nearest step size, making sure we curtail precision to same order of magnitude as the step size to avoid 0.4 + 0.2 = 0.6000000000000001
     def round_value(val)
-      remainder = val % self.step_size
-      unprecised = if (remainder * 2) >= self.step_size
-                      (val - remainder) + self.step_size
-                    else
-                      val - remainder
-                    end
-      if self.step_size < 1
-        precision = -Math.log10(self.step_size).floor
-        (unprecised * (10 ** precision)).to_i.to_f / (10 ** precision)
-      else
-        unprecised
-      end      
+      _, exponent = from_step(step_size)
+      decimal_places = [0, -exponent].max
+      ((val / step_size).round * step_size).round(decimal_places)
     end
 
     def max_yval
@@ -147,19 +139,23 @@ module AsciiCharts
 
       @max_xval_width = 1
 
-      self.data.each do |pair|
-        if pair[1] > @max_yval
-          @max_yval = pair[1]
+      self.data.each do |arr|
+        arr = arr.drop(1)
+
+        if arr.any? { |n| n > @max_yval }
+          @max_yval = arr.max
         end
-        if pair[1] < @min_yval
-          @min_yval = pair[1]
+
+        if arr.any? { |n| n < @min_yval }
+          @min_yval = arr.min
         end
-        if @all_ints && !pair[1].is_a?(Integer)
+
+        if @all_ints && arr.any? { |n| !n.is_a?(Integer) }
           @all_ints = false
         end
 
-        if (xw = pair[0].to_s.length) > @max_xval_width
-          @max_xval_width = xw
+        if arr.any? { |n| n.to_s.length > @max_xval_width }
+          @max_xval_width = arr.sort_by { |n| n.to_s.length }.last.to_s.length # @@
         end
       end
     end
@@ -223,6 +219,10 @@ module AsciiCharts
   end
 
   class Cartesian < Chart
+    def initialize(*)
+      super
+      @markers = @options[:markers] || ['*']
+    end
 
     def lines
       if self.data.size == 0
@@ -230,10 +230,10 @@ module AsciiCharts
       end
 
       lines = [' ']
-      
+
       bar_width = self.max_xval_width + 1
 
-      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|pair| pair[0].to_s.center(bar_width)}.join('')
+      lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map { |arr| arr[0].to_s.center(bar_width) }.join('')
 
       self.y_range.each_with_index do |current_y, i|
         yval = current_y.to_s
@@ -243,31 +243,28 @@ module AsciiCharts
                 '|'
               end
         current_line = [(' ' * (self.max_yval_width - yval.length) ) + "#{current_y}#{bar}"]
-        
-        self.rounded_data.each do |pair|
-          marker = if (0 == i) && options[:hide_zero]
-                     '-'
-                   else
-                     '*'
-                   end
-          filler = if 0 == i
-                     '-'
-                   else
-                     ' '
-                   end
-          comparison = if self.options[:bar]
-                         current_y <= pair[1]
-                       else
-                         current_y == pair[1]
-                       end
-          if comparison
-            current_line << marker.center(bar_width, filler)
-          else
-            current_line << filler * bar_width
+
+        self.rounded_data.each do |arr|
+          filler = (0 == i) ? '-' : ' '
+          result = filler * bar_width
+
+          arr = arr.drop(1)
+
+          arr.each_with_index do |n, j|
+            if self.options[:bar]
+              next if current_y > n || arr.any? { |nn| nn < n && current_y <= nn }
+            else
+              next if current_y != n
+            end
+
+            marker = ((0 == i) && options[:hide_zero]) ? '-' : marker_for_series(j)
+
+            result = marker.center(bar_width, filler)
           end
+
+          current_line << result
         end
         lines << current_line.join('')
-        current_y = current_y + self.step_size
       end
       lines << ' '
       if self.options[:title]
@@ -277,6 +274,8 @@ module AsciiCharts
       lines.reverse
     end
 
+    def marker_for_series(series)
+      @markers[series % @markers.length]
+    end
   end
-
 end
