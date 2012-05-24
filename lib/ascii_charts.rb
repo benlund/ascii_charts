@@ -12,13 +12,29 @@ module AsciiCharts
     #data is a sorted array of [x, y] pairs
 
     def initialize(data, options={})
-      @data = data
+      if (data[0].length == 2)
+        # treat as array of points
+        @data = data
+      else
+        # treat as array of series
+        @data = []
+        (0..(data[0].length - 1)).each do |i|
+          point = []
+          (0..(data.length - 1)).each do |series|
+            point.push(data[series][i])
+          end
+          @data.push(point)
+        end
+      end
+
       @options = options
     end
 
 
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
+      @rounded_data ||= self.data.map do |point|
+        point.map {|coord| self.round_value(coord)}
+      end
     end
 
     def step_size
@@ -71,7 +87,7 @@ module AsciiCharts
 
     def to_step(num, order)
       s = num * (10 ** order)
-      if order < 0        
+      if order < 0
         s.to_f
       else
         s
@@ -107,16 +123,16 @@ module AsciiCharts
     def round_value(val)
       remainder = val % self.step_size
       unprecised = if (remainder * 2) >= self.step_size
-                      (val - remainder) + self.step_size
-                    else
-                      val - remainder
-                    end
+                     (val - remainder) + self.step_size
+                   else
+                     val - remainder
+                   end
       if self.step_size < 1
         precision = -Math.log10(self.step_size).floor
         (unprecised * (10 ** precision)).to_i.to_f / (10 ** precision)
       else
         unprecised
-      end      
+      end
     end
 
     def max_yval
@@ -226,11 +242,11 @@ module AsciiCharts
 
     def lines
       if self.data.size == 0
-        return [[' ', self.options[:title], ' ', '|', '+-', ' ']] 
+        return [[' ', self.options[:title], ' ', '|', '+-', ' ']]
       end
 
       lines = [' ']
-      
+
       bar_width = self.max_xval_width + 1
 
       lines << (' ' * self.max_yval_width) + ' ' + self.rounded_data.map{|pair| pair[0].to_s.center(bar_width)}.join('')
@@ -243,25 +259,38 @@ module AsciiCharts
                 '|'
               end
         current_line = [(' ' * (self.max_yval_width - yval.length) ) + "#{current_y}#{bar}"]
-        
-        self.rounded_data.each do |pair|
-          marker = if (0 == i) && options[:hide_zero]
-                     '-'
-                   else
-                     '*'
-                   end
+
+        self.rounded_data.each do |point|
+          def marker(series, i)
+            puts series
+
+            if (0 == i) && options[:hide_zero]
+              '-'
+            else
+              if (options[:markers])
+                options[:markers][series]
+              else
+                '*'
+              end
+            end
+          end
+
           filler = if 0 == i
                      '-'
                    else
                      ' '
                    end
-          comparison = if self.options[:bar]
-                         current_y <= pair[1]
-                       else
-                         current_y == pair[1]
-                       end
-          if comparison
-            current_line << marker.center(bar_width, filler)
+
+          matching_series = false
+          (1..(point.length - 1)).each do |i|
+            if ((self.options[:bar] && current_y <= point[i]) || (!self.options[:bar] && current_y == point[i]))
+              matching_series = i
+            end
+          end
+
+          if matching_series
+            puts matching_series.inspect
+            current_line << marker(matching_series[0], i).center(bar_width, filler)
           else
             current_line << filler * bar_width
           end
