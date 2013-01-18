@@ -1,6 +1,6 @@
 module AsciiCharts
 
-  VERSION = '0.9.1'
+  VERSION = '0.9.2'
 
   class Chart
 
@@ -11,11 +11,11 @@ module AsciiCharts
 
     #data is a sorted array of [x, y] pairs
 
-    def initialize(data, options={})
+    def initialize(data, options={})      
+      puts data
       @data = data
       @options = options
     end
-
 
     def rounded_data
       @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
@@ -248,7 +248,7 @@ module AsciiCharts
           marker = if (0 == i) && options[:hide_zero]
                      '-'
                    else
-                     '*'
+                     'o'
                    end
           filler = if 0 == i
                      '-'
