@@ -1,6 +1,6 @@
 module AsciiCharts
 
-  VERSION = '0.9.1'
+  VERSION = '0.9.2'
 
   class Chart
 
@@ -10,15 +10,43 @@ module AsciiCharts
     DEFAULT_MIN_Y_VALS = 10
 
     #data is a sorted array of [x, y] pairs
+    #now allows inputs in the form of either [x1...xn],[y11...y1n]..[ym1...ymn],options
+    #which will be transformed into [[x1,y1],[x2,y2]..[xn,yn]]
 
-    def initialize(data, options={})
-      @data = data
-      @options = options
+    def initialize(*args)
+      datalength = args.length
+
+      if args[args.length - 1].is_a?(Hash)
+        @options = args[args.length - 1]
+        datalength = datalength - 1
+      else
+        @options = {}
+      end
+      if 1 == datalength
+        @data = args[0]
+      else
+        convert_data_series(args[0..(datalength - 1)])
+      end
     end
 
+    def convert_data_series(args)
+      @data = []
+      (1 .. args[0].length).each do
+        @data << []
+      end
+
+      args.each do |data_series|
+        if data_series.length > args[0].length
+          raise "Some y values do not have corresponding x. "
+        end
+        for j in 0 .. (data_series.length - 1)
+          @data[j] << data_series[j]
+        end
+      end      
+    end
 
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
+      @rounded_data ||= self.data.map{|pair| [pair[0], pair[1.. (pair.length - 1)].map{|y| y && self.round_value(y)}].flatten! }
     end
 
     def step_size
@@ -27,7 +55,7 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
 
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
@@ -148,14 +176,24 @@ module AsciiCharts
       @max_xval_width = 1
 
       self.data.each do |pair|
-        if pair[1] > @max_yval
-          @max_yval = pair[1]
-        end
-        if pair[1] < @min_yval
-          @min_yval = pair[1]
-        end
-        if @all_ints && !pair[1].is_a?(Integer)
-          @all_ints = false
+        cur_num = 0
+        for i in (1..pair.length - 1)
+          if pair[i]
+            if options[:bar]
+              cur_num += pair[i]
+            else
+              cur_num = pair[i]
+            end
+            if cur_num > @max_yval
+              @max_yval = cur_num
+            end
+            if cur_num < @min_yval
+              @min_yval = cur_num
+            end
+            if @all_ints && !cur_num.is_a?(Integer)
+              @all_ints = false
+            end
+          end
         end
 
         if (xw = pair[0].to_s.length) > @max_xval_width
@@ -220,6 +258,20 @@ module AsciiCharts
       draw
     end
 
+    def get_markers(i)
+      if self.options[:markers]
+        if 1 == self.options[:markers].length
+          return self.options[:markers][0]
+        end
+        if i >= self.options[:markers].length
+          raise "There are not enough markers. "
+        end
+        self.options[:markers][i]
+      else
+        '*'
+      end
+    end
+
   end
 
   class Cartesian < Chart
@@ -245,25 +297,16 @@ module AsciiCharts
         current_line = [(' ' * (self.max_yval_width - yval.length) ) + "#{current_y}#{bar}"]
         
         self.rounded_data.each do |pair|
-          marker = if (0 == i) && options[:hide_zero]
-                     '-'
-                   else
-                     '*'
-                   end
           filler = if 0 == i
                      '-'
                    else
                      ' '
                    end
-          comparison = if self.options[:bar]
-                         current_y <= pair[1]
-                       else
-                         current_y == pair[1]
-                       end
-          if comparison
-            current_line << marker.center(bar_width, filler)
-          else
+          series_id = self.comparison(current_y, pair[1..(pair.length - 1)])
+          if (series_id < 0) || (0 == i) && options[:hide_zero]
             current_line << filler * bar_width
+          else
+            current_line << self.get_markers(series_id).center(bar_width, filler)
           end
         end
         lines << current_line.join('')
@@ -275,6 +318,29 @@ module AsciiCharts
       end
       lines << ' '
       lines.reverse
+    end
+
+    def comparison(current_y, series)
+      result = -1
+      if self.options[:bar]
+        for i in (0..series.length - 1)
+          if series[i]
+            if current_y <= series[i]
+              return i
+            else
+              current_y -= series[i]
+            end
+          end
+        end
+        return -1
+      else
+        for i in (0..series.length - 1)
+          if current_y == series[i]
+            result = i
+          end
+        end
+      end
+      return result
     end
 
   end
