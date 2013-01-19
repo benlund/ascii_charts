@@ -27,9 +27,6 @@ module AsciiCharts
       else
         convert_data_series(args[0..(datalength - 1)])
       end
-      if self.options[:bar]
-        bar_reduction
-      end
     end
 
     def convert_data_series(args)
@@ -60,9 +57,8 @@ module AsciiCharts
       end
     end
 
-    #@rounded_data is now in the form of [[x1,[y11,...ym1]], [x2, [y12...ym2]], ...]
     def rounded_data
-      @rounded_data ||= self.data.map{|pair| [pair[0], pair[1.. (pair.length - 1)].map{|y| y && self.round_value(y)}] }
+      @rounded_data ||= self.data.map{|pair| [pair[0], pair[1.. (pair.length - 1)].map{|y| y && self.round_value(y)}].flatten! }
     end
 
     def step_size
@@ -192,15 +188,21 @@ module AsciiCharts
       @max_xval_width = 1
 
       self.data.each do |pair|
+        cur_num = 0
         for i in (1..pair.length - 1)
           if pair[i]
-            if pair[i] > @max_yval
-              @max_yval = pair[i]
+            if options[:bar]
+              cur_num += pair[i]
+            else
+              cur_num = pair[i]
             end
-            if pair[i] < @min_yval
-              @min_yval = pair[i]
+            if cur_num > @max_yval
+              @max_yval = cur_num
             end
-            if @all_ints && !pair[i].is_a?(Integer)
+            if cur_num < @min_yval
+              @min_yval = cur_num
+            end
+            if @all_ints && !cur_num.is_a?(Integer)
               @all_ints = false
             end
           end
@@ -312,7 +314,7 @@ module AsciiCharts
                    else
                      ' '
                    end
-          series_id = self.comparison(current_y, pair[1])
+          series_id = self.comparison(current_y, pair[1..(pair.length - 1)])
           if (series_id < 0) || (0 == i) && options[:hide_zero]
             current_line << filler * bar_width
           else
@@ -337,6 +339,8 @@ module AsciiCharts
           if series[i]
             if current_y <= series[i]
               return i
+            else
+              current_y -= series[i]
             end
           end
         end
