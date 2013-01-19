@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.description = 'Library to draw simple ASCII charts (x,y graph plots and histograms)'
   s.summary = 'Very simple API, your data may already in the correct format to be plotted. Dynamically scales the y-axis. Simple configuration options, including chart title.'
   s.email = 'ben@benlund.com'
-  s.homepage = 'http://github.com/bobbyliu/ascii_charts'
+  s.homepage = 'http://github.com/benlund/ascii_charts'
 
   s.files = ['lib/ascii_charts.rb']
 end

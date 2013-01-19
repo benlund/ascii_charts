@@ -10,11 +10,19 @@ A Ruby library for generating plain text x,y cartesian plots and histograms that
 
 ## Unfeatures
 
- * No more than one data series per chart
  * Data must be pre-sorted 
  * x axis will not be continuous if your data isn't
  * Only x,y point graphs and bar histograms supported
  * Minimal configuration options
+
+## Update in 0.9.2
+
+ * Now supports a different way of passing the inputs
+ * Supports more than one data series per chart   
+   In the case of bar chart, the values will be stacked according to data sequence. 
+ * Supports the selection of marker characters
+   User can specify one marker, in which case all line sequences will use that marker. Or user can specify marker at least the same number as the number of data series. 
+ * Now allows nil in the y-values, in which case the corresponding point will be left blank 
 
 ## Install
 
@@ -112,4 +120,64 @@ A Ruby library for generating plain text x,y cartesian plots and histograms that
      0.0+-*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*-
           0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 
 
+    ## draw a line with multiple data series. Argument format is (x-array, y1-array... ym-array, options)
+    puts AsciiCharts::Cartesian.new([0, 1, 2, 3], [10, 20, nil, 25], [5, 0, 5, 10], :markers => ['*','x']).draw
 
+    26|      *
+    24|
+    22|
+    20|  *
+    18|
+    16|
+    14|
+    12|
+    10|*     x
+     8|
+     6|x   x
+     4|
+     2|
+     0+--x-----
+       0 1 2 3
+
+    ## draw a bar chart for multiple series
+    puts AsciiCharts::Cartesian.new([0, 1, 2], [1, 10, 4], [2, 0, 6], [2, 1, 6], :bar => true, :hide_zero => true, :markers => ['*','o','x']).draw
+
+    16|    x
+    15|    x
+    14|    x
+    13|    x
+    12|    x
+    11|  x x
+    10|  * o
+     9|  * o
+     8|  * o
+     7|  * o
+     6|  * o
+     5|x * o
+     4|x * *
+     3|o * *
+     2|o * *
+     1|* * *
+     0+------
+       0 1 2
+
+    ## alternative way of insert multiple series. Argument format is ([[x1 with y's], ...[xn with y's]], options) 
+    puts AsciiCharts::Cartesian.new([[0, 1, 2, 2], [1, 10, 0, 1], [2, 4, 6, 6]], :bar => true, :hide_zero => true, :markers => ['*','o','x']).draw
+    16|    x
+    15|    x
+    14|    x
+    13|    x
+    12|    x
+    11|  x x
+    10|  * o
+     9|  * o
+     8|  * o
+     7|  * o
+     6|  * o
+     5|x * o
+     4|x * *
+     3|o * *
+     2|o * *
+     1|* * *
+     0+------
+       0 1 2
