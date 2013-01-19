@@ -45,18 +45,6 @@ module AsciiCharts
       end      
     end
 
-    def bar_reduction()
-      @data.each do |series|
-        cur_sum = 0
-        for i in (1..series.length - 1)
-          if series[i]
-            cur_sum = cur_sum + series[i]
-            series[i] = cur_sum
-          end
-        end
-      end
-    end
-
     def rounded_data
       @rounded_data ||= self.data.map{|pair| [pair[0], pair[1.. (pair.length - 1)].map{|y| y && self.round_value(y)}].flatten! }
     end
