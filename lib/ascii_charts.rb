@@ -16,7 +16,6 @@ module AsciiCharts
       @options = options
     end
 
-
     def rounded_data
       @rounded_data ||= self.data.map{|pair| [pair[0], self.round_value(pair[1])]}
     end
@@ -27,9 +26,8 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
-
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
 
           if @all_ints && (step_size < 1)
@@ -71,7 +69,7 @@ module AsciiCharts
 
     def to_step(num, order)
       s = num * (10 ** order)
-      if order < 0        
+      if order < 0
         s.to_f
       else
         s
@@ -141,8 +139,8 @@ module AsciiCharts
     end
 
     def scan_data
-      @max_yval = 0
-      @min_yval = 0
+      @max_yval = -Float::INFINITY
+      @min_yval = Float::INFINITY
       @all_ints = true
 
       @max_xval_width = 1
