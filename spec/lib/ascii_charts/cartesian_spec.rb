@@ -1,15 +1,25 @@
 require 'spec_helper'
 
 describe AsciiCharts::Cartesian do
-  it 'displays a graph of points' do
-    xs1 = (1..10)
-    ys1 = Array.new(10) { |_| (rand * 12).round }
+  it 'displays a graph of series' do
+    xs1 = (1..10).to_a
+    ys1 = (1..10).to_a
+    ys2 = (1..10).to_a.reverse
 
-    xs2 = (1..10)
-    ys2 = Array.new(10) { |_| (rand * 12).round }
+    graph = AsciiCharts::Cartesian.new(
+      [
+        xs1,
+        ys1,
+        ys2
+      ],
+      markers: ['👋', '👍', '👌']
+    )
 
-    graph = AsciiCharts::Cartesian.new(xs1.zip(ys1)).draw
+    expect(graph.lines.size).to be(15)
 
-    puts graph
+    drawing = graph.draw
+    expect(drawing).to include('👋')
+    expect(drawing).to include('👍')
+    expect(drawing).to_not include('👌')
   end
 end
