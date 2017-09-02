@@ -1,5 +1,5 @@
 $:.unshift File.expand_path('../lib', __FILE__)
-require 'ascii_charts'
+require 'ascii_charts/version'
 
 Gem::Specification.new do |s|
   s.name = 'ascii-charts'
@@ -12,5 +12,9 @@ Gem::Specification.new do |s|
   s.homepage = 'http://github.com/benlund/ascii_charts'
   s.licenses = ['MIT']
 
-  s.files = ['lib/ascii_charts.rb']
+  s.files = `git ls-files`.split("\n")
+  s.require_paths = ["lib"]
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
 end
