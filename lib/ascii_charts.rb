@@ -27,7 +27,7 @@ module AsciiCharts
           @step_size = self.options[:y_step_size]
         else
           max_y_vals = self.options[:max_y_vals] || DEFAULT_MAX_Y_VALS
-          min_y_vals = self.options[:max_y_vals] || DEFAULT_MIN_Y_VALS
+          min_y_vals = self.options[:min_y_vals] || DEFAULT_MIN_Y_VALS
           y_span = (self.max_yval - self.min_yval).to_f
 
           step_size = self.nearest_step( y_span.to_f / (self.data.size + 1) )
